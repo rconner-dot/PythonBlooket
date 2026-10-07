@@ -1,0 +1,922 @@
+/* ==========================================================================
+   Boss Battle — every rule is scoped under .mode-boss and/or uses "boss-"
+   class names. Reuses the shared tokens from style.css.
+   ========================================================================== */
+
+.mode-boss {
+  --boss-top: var(--topbar-h);
+}
+
+/* ------------------------------------------------------------ dock ------ */
+
+/* Sticky band under the game top bar holding the boss + player cards, so the
+   battle stays in view while the question card scrolls beneath it. */
+.mode-boss .boss-dock {
+  position: sticky;
+  top: var(--boss-top);
+  z-index: 15;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(30, 14, 88, 0.95), rgba(24, 10, 72, 0.95));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.08);
+  /* floating damage numbers may poke out sideways: never widen the page */
+  overflow-x: clip;
+}
+
+.mode-boss .boss-arena {
+  position: relative;
+  max-width: 908px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.mode-boss .boss-stage {
+  padding-top: 16px;
+}
+
+.mode-boss .boss-question {
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------ cards ----- */
+
+.mode-boss .boss-card {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  align-items: center;
+  border-radius: var(--radius);
+  padding: 10px 14px 14px;
+}
+
+.mode-boss .boss-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mode-boss .boss-hp-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 0 4px;
+  font-weight: 900;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.mode-boss .boss-hp-label {
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.mode-boss .boss-hp-text {
+  white-space: nowrap;
+}
+
+.mode-boss .boss-hp-text b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.1em;
+}
+
+.mode-boss .boss-hp-max {
+  opacity: 0.75;
+}
+
+/* --- boss (foe) card --- */
+
+.mode-boss .boss-foe {
+  --boss-c1: #34405e;
+  --boss-c2: #64779f;
+  --boss-edge: rgba(0, 0, 0, 0.32);
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 14px;
+  color: #fff;
+  background:
+    radial-gradient(110px 90px at 62px 55%, rgba(255, 255, 255, 0.22), transparent 70%),
+    linear-gradient(135deg, var(--boss-c1), var(--boss-c2));
+  box-shadow: inset 0 -6px 0 var(--boss-edge), 0 4px 0 rgba(0, 0, 0, 0.2);
+  transition: background 0.6s ease;
+}
+
+.mode-boss .boss-foe-serpent {
+  --boss-c1: #0b5a35;
+  --boss-c2: #1f9f62;
+}
+
+.mode-boss .boss-foe-golem {
+  --boss-c1: #343f5c;
+  --boss-c2: #62749c;
+}
+
+.mode-boss .boss-foe-dragon {
+  --boss-c1: #6b1630;
+  --boss-c2: #c2410c;
+}
+
+.mode-boss .boss-foe.is-enraged {
+  --boss-c1: #5c0a1c;
+  --boss-c2: #d42a3a;
+  animation: boss-rage-glow 1.1s ease-in-out infinite alternate;
+}
+
+.mode-boss .boss-foe-sprite {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 104px;
+}
+
+/* floor shadow under the floating boss */
+.mode-boss .boss-foe-sprite::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 64%;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.32);
+  transform: translateX(-50%);
+  animation: boss-shadow 2.4s ease-in-out infinite;
+}
+
+.mode-boss .boss-foe-aura {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.28), transparent 68%);
+}
+
+.mode-boss .is-enraged .boss-foe-aura {
+  background: radial-gradient(circle, rgba(255, 70, 70, 0.75), transparent 68%);
+  animation: pulse 0.55s ease-in-out infinite alternate;
+}
+
+.mode-boss .boss-foe-body {
+  position: relative;
+  z-index: 1;
+}
+
+.mode-boss .boss-foe-emoji {
+  display: block;
+  font-size: 74px;
+  line-height: 1;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.25));
+  animation: boss-bob 2.4s ease-in-out infinite;
+  user-select: none;
+}
+
+.mode-boss .is-enraged .boss-foe-emoji {
+  animation-duration: 1s;
+  filter: drop-shadow(0 0 8px rgba(255, 50, 50, 0.95)) drop-shadow(0 6px 0 rgba(0, 0, 0, 0.25));
+}
+
+.mode-boss .boss-foe-info {
+  min-width: 0;
+}
+
+.mode-boss .boss-foe-name {
+  min-width: 0;
+  font-size: 1.35rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.mode-boss .boss-rage-badge {
+  flex: none;
+  padding: 0.15em 0.6em 0.22em;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-red-d);
+  font-weight: 900;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+/* status line + speech bubble share one slot (desktop) */
+.mode-boss .boss-foe-say {
+  display: grid;
+  align-items: center;
+  min-height: 2.9em;
+  margin-top: 8px;
+}
+
+.mode-boss .boss-foe-say > * {
+  grid-area: 1 / 1;
+}
+
+.mode-boss .boss-foe-status {
+  font-weight: 800;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.mode-boss .boss-foe-say.has-taunt .boss-foe-status {
+  visibility: hidden;
+}
+
+.mode-boss .boss-taunt {
+  position: relative;
+  justify-self: start;
+  max-width: 100%;
+  margin-left: 8px;
+  padding: 6px 12px 7px;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--c-text);
+  font-weight: 800;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
+}
+
+/* tail pointing at the boss */
+.mode-boss .boss-taunt::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -8px;
+  border: 8px solid transparent;
+  border-left: 0;
+  border-right-color: #fff;
+  transform: translateY(-50%);
+}
+
+.mode-boss .boss-taunt[data-kind="taunt"],
+.mode-boss .boss-taunt[data-kind="rage"] {
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.mode-boss .boss-taunt[data-kind="rage"] {
+  background: #ffe1e5;
+  color: #8a1426;
+}
+
+.mode-boss .boss-taunt[data-kind="rage"]::before {
+  border-right-color: #ffe1e5;
+}
+
+.mode-boss .boss-pop {
+  animation: boss-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.5) both;
+}
+
+/* --- player (hero) card --- */
+
+.mode-boss .boss-hero {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  background: var(--c-card);
+  color: var(--c-text);
+  box-shadow: inset 0 -6px 0 #ddd3f5, 0 4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.mode-boss .boss-hero-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.mode-boss .boss-hero-info {
+  min-width: 0;
+}
+
+/* Hardcore skull on the avatar (phones only; desktop shows the name tag) */
+.mode-boss .boss-hc-badge {
+  position: absolute;
+  right: -5px;
+  bottom: -3px;
+  z-index: 2;
+  display: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #2a1b4f;
+  font-size: 0.65rem;
+  line-height: 1;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.mode-boss .boss-hero-name {
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mode-boss .boss-tag-hardcore {
+  flex: none;
+  padding: 0.1em 0.55em 0.18em;
+  border-radius: 999px;
+  background: #2a1b4f;
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.mode-boss .boss-combo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 0.22em 0.75em 0.3em;
+  border-radius: 999px;
+  background: #f1ecff;
+  color: var(--c-muted);
+  font-weight: 900;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+}
+
+.mode-boss .boss-combo:not([data-level="0"]) {
+  background: linear-gradient(135deg, var(--c-orange), var(--c-red));
+  color: #fff;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+}
+
+.mode-boss .boss-combo[data-level="5"] {
+  background: linear-gradient(135deg, #ff5cb8, #7c3aed);
+}
+
+.mode-boss .boss-combo-bonus:empty {
+  display: none;
+}
+
+.mode-boss .boss-combo-suffix {
+  white-space: pre;
+}
+
+.mode-boss .boss-bump {
+  animation: boss-bump 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.6);
+}
+
+.mode-boss .boss-hero.boss-hit {
+  animation: shake 0.45s ease both, boss-hit-tint 0.6s ease both;
+}
+
+.mode-boss .boss-hop {
+  animation: boss-hop 0.32s ease-out;
+}
+
+.mode-boss .boss-hero.is-ko .blook {
+  filter: grayscale(1);
+  animation: boss-ko 0.7s cubic-bezier(0.5, 0, 0.7, 1.4) 0.15s forwards;
+}
+
+/* ------------------------------------------------------------ HP bars --- */
+
+.mode-boss .boss-hp {
+  position: relative;
+  height: 18px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.mode-boss .boss-hp-hero {
+  background: #e9e2fa;
+  box-shadow: inset 0 2px 0 rgba(42, 27, 79, 0.12);
+}
+
+.mode-boss .boss-hp-fill,
+.mode-boss .boss-hp-ghost {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-radius: inherit;
+}
+
+.mode-boss .boss-hp-ghost {
+  background: #fff3a8;
+  transition: width 0.55s ease 0.5s;
+}
+
+.mode-boss .boss-hp-fill {
+  background: linear-gradient(180deg, #ff7b6b, #e02f44);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18), inset 0 3px 0 rgba(255, 255, 255, 0.3);
+  transition: width 0.45s cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+
+.mode-boss .boss-hp-hero .boss-hp-fill {
+  background: linear-gradient(180deg, #4ee08c, var(--c-green));
+}
+
+.mode-boss .boss-hp-hero[data-tone="mid"] .boss-hp-fill {
+  background: linear-gradient(180deg, #ffd25e, var(--c-orange));
+}
+
+.mode-boss .boss-hp-hero[data-tone="low"] .boss-hp-fill {
+  background: linear-gradient(180deg, #ff7b8a, var(--c-red));
+  animation: boss-low-hp 0.7s ease-in-out infinite alternate;
+}
+
+/* ------------------------------------------------------- floating text -- */
+
+.mode-boss .boss-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.mode-boss .boss-float {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  line-height: 1;
+  color: #fff;
+  white-space: nowrap;
+  text-shadow:
+    -2px -2px 0 #2a1b4f, 2px -2px 0 #2a1b4f, -2px 2px 0 #2a1b4f, 2px 2px 0 #2a1b4f,
+    0 5px 0 rgba(0, 0, 0, 0.35);
+  animation: boss-float-up 1.25s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.mode-boss .boss-float-hit {
+  color: #fff;
+}
+
+.mode-boss .boss-float-crit {
+  font-size: 2.5rem;
+  color: #ffd23f;
+  animation-duration: 1.35s;
+}
+
+.mode-boss .boss-float-crit small {
+  font-size: 0.45em;
+  letter-spacing: 0.06em;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.mode-boss .boss-float-hurt {
+  color: #ff5c6c;
+  top: 10%;
+}
+
+.mode-boss .boss-float-boom {
+  top: 50%;
+  font-size: 4rem;
+  text-shadow: none;
+  animation: boss-boom 0.9s ease-out both;
+}
+
+.mode-boss .boss-shot {
+  position: absolute;
+  z-index: 4;
+  font-size: 2rem;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
+}
+
+/* ----------------------------------------------------------- reactions -- */
+
+.mode-boss .boss-enter {
+  animation: boss-enter 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.35) both;
+}
+
+.mode-boss .boss-hurt {
+  animation: boss-hurt 0.55s ease both;
+}
+
+.mode-boss .boss-lunge {
+  animation: boss-lunge 0.5s cubic-bezier(0.3, 0, 0.3, 1) both;
+}
+
+.mode-boss .boss-laugh {
+  animation: boss-laugh 0.9s ease-in-out 2;
+}
+
+.mode-boss .boss-dying {
+  animation: boss-dying 1.3s cubic-bezier(0.5, 0, 0.6, 1) forwards;
+}
+
+.mode-boss .boss-quake {
+  animation: boss-quake 0.45s ease both;
+}
+
+/* ------------------------------------------------------------- banner --- */
+
+.mode-boss .boss-banner {
+  position: absolute;
+  inset: -4px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  border-radius: var(--radius);
+  background: rgba(20, 8, 60, 0.72);
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 6vw, 3.4rem);
+  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.4);
+  animation: boss-banner-in 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+.mode-boss .boss-banner strong {
+  font-weight: 400;
+}
+
+.mode-boss .boss-banner-win {
+  color: #ffd23f;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 210, 63, 0.35), rgba(20, 8, 60, 0.78) 70%);
+}
+
+.mode-boss .boss-banner-lose {
+  color: #ff6b7d;
+}
+
+.mode-boss .boss-banner-icon {
+  animation: bounce 0.6s ease-in-out infinite alternate;
+}
+
+/* full-screen flash (lives on <body>, outside .mode-boss) */
+.boss-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.boss-flash-hurt {
+  background: radial-gradient(ellipse at center, rgba(224, 47, 68, 0) 35%, rgba(224, 47, 68, 0.55) 100%);
+}
+
+.boss-flash-crit {
+  background: radial-gradient(ellipse at center, rgba(255, 210, 63, 0) 40%, rgba(255, 210, 63, 0.42) 100%);
+}
+
+.boss-flash.is-on {
+  animation: boss-flash 0.6s ease-out both;
+}
+
+/* ------------------------------------------------------------ keyframes - */
+
+@keyframes boss-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+
+@keyframes boss-shadow {
+  0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.9; }
+  50% { transform: translateX(-50%) scaleX(0.78); opacity: 0.55; }
+}
+
+@keyframes boss-enter {
+  0% { transform: scale(0) rotate(-25deg); opacity: 0; }
+  60% { transform: scale(1.2) rotate(6deg); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+
+@keyframes boss-hurt {
+  0% { transform: none; filter: none; }
+  15% { transform: translateX(-9px) rotate(-7deg) scale(0.9); filter: brightness(2.4) saturate(0); }
+  35% { transform: translateX(8px) rotate(6deg) scale(0.95); filter: brightness(1.3) sepia(1) hue-rotate(-50deg) saturate(5); }
+  55% { transform: translateX(-5px) rotate(-3deg); filter: none; }
+  75% { transform: translateX(3px); }
+  100% { transform: none; filter: none; }
+}
+
+@keyframes boss-lunge {
+  0% { transform: none; }
+  30% { transform: translateX(-8px) scale(0.94) rotate(-4deg); }
+  55% { transform: translateX(28px) scale(1.2) rotate(6deg); }
+  100% { transform: none; }
+}
+
+@keyframes boss-laugh {
+  0%, 100% { transform: none; }
+  20%, 60% { transform: translateY(-7px) rotate(-5deg); }
+  40%, 80% { transform: translateY(0) rotate(5deg); }
+}
+
+@keyframes boss-dying {
+  0% { transform: none; filter: none; opacity: 1; }
+  15% { transform: scale(1.15) rotate(-8deg); filter: brightness(2.6) saturate(0); }
+  30% { transform: scale(1.1) rotate(8deg); filter: brightness(1.2); }
+  45% { transform: scale(1.12) rotate(-6deg); filter: brightness(2.6) saturate(0); }
+  100% { transform: translateY(24px) scale(0.05) rotate(540deg); filter: brightness(3); opacity: 0; }
+}
+
+@keyframes boss-quake {
+  0%, 100% { transform: none; }
+  15% { transform: translate(-7px, 2px) rotate(-0.5deg); }
+  30% { transform: translate(6px, -2px) rotate(0.4deg); }
+  45% { transform: translate(-5px, 1px); }
+  60% { transform: translate(4px, -1px); }
+  80% { transform: translate(-2px, 0); }
+}
+
+@keyframes boss-hop {
+  0%, 100% { transform: none; }
+  40% { transform: translate(-12px, -8px) scale(1.12) rotate(-8deg); }
+}
+
+@keyframes boss-ko {
+  to { transform: rotate(-90deg) translateX(-6px); }
+}
+
+@keyframes boss-hit-tint {
+  0% { background: #ffd0d6; }
+  100% { background: var(--c-card); }
+}
+
+@keyframes boss-low-hp {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.35); }
+}
+
+@keyframes boss-float-up {
+  0% { transform: translate(calc(var(--fx-shift, -50%) + var(--dx, 0px)), 12px) scale(0.4); opacity: 0; }
+  14% { transform: translate(calc(var(--fx-shift, -50%) + var(--dx, 0px)), -8px) scale(1.25); opacity: 1; }
+  28% { transform: translate(calc(var(--fx-shift, -50%) + var(--dx, 0px)), -14px) scale(1); opacity: 1; }
+  72% { opacity: 1; }
+  100% { transform: translate(calc(var(--fx-shift, -50%) + var(--dx, 0px)), -62px) scale(0.95); opacity: 0; }
+}
+
+@keyframes boss-boom {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  25% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+@keyframes boss-pop {
+  0% { opacity: 0; transform: scale(0.6) translateX(-12px); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes boss-bump {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.2); }
+}
+
+@keyframes boss-rage-glow {
+  from { box-shadow: inset 0 -6px 0 var(--boss-edge), 0 4px 0 rgba(0, 0, 0, 0.2), 0 0 10px rgba(255, 40, 40, 0.35); }
+  to { box-shadow: inset 0 -6px 0 var(--boss-edge), 0 4px 0 rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(255, 110, 110, 0.9), 0 0 30px rgba(255, 40, 40, 0.8); }
+}
+
+@keyframes boss-banner-in {
+  0% { opacity: 0; transform: scale(0.6); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes boss-flash {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ---------------------------------------------------------- responsive -- */
+
+/* Phones (and short landscape screens): the dock becomes a compact HUD strip
+   so the question gets the room. */
+@media (max-width: 640px), (max-height: 520px) {
+  .mode-boss .boss-dock {
+    padding: 8px 10px 9px;
+  }
+
+  .mode-boss .boss-stage {
+    padding: 12px 10px 32px;
+  }
+
+  .mode-boss .boss-arena {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .mode-boss .boss-card {
+    padding: 6px 9px 10px;
+    border-radius: 14px;
+  }
+
+  .mode-boss .boss-foe {
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 8px;
+    box-shadow: inset 0 -4px 0 var(--boss-edge), 0 3px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  .mode-boss .boss-hero {
+    gap: 7px;
+    box-shadow: inset 0 -4px 0 #ddd3f5, 0 3px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  .mode-boss .boss-foe-sprite {
+    width: 46px;
+    height: 50px;
+  }
+
+  .mode-boss .boss-foe-sprite::after {
+    bottom: 0;
+    height: 7px;
+  }
+
+  .mode-boss .boss-foe-emoji {
+    font-size: 36px;
+  }
+
+  /* the strip has vertical room to spare: let long boss names wrap */
+  .mode-boss .boss-foe-name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.86rem;
+    line-height: 1.05;
+    white-space: normal;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  .mode-boss .boss-rage-badge {
+    font-size: 0.62rem;
+    padding: 0.1em 0.45em 0.16em;
+  }
+
+  .mode-boss .boss-hp-row {
+    margin: 1px 0 3px;
+    font-size: 0.72rem;
+  }
+
+  .mode-boss .boss-hp-label {
+    display: none;
+  }
+
+  .mode-boss .boss-hp {
+    height: 11px;
+  }
+
+  .mode-boss .boss-hp-fill {
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .mode-boss .boss-hero .blook {
+    --blook-size: 38px !important;
+  }
+
+  /* keep the strip short: no name row (the avatar identifies you) */
+  .mode-boss .boss-hero .boss-card-head {
+    display: none;
+  }
+
+  .mode-boss .boss-combo-suffix {
+    display: none;
+  }
+
+  .mode-boss .boss-hc-badge {
+    display: grid;
+  }
+
+  .mode-boss .boss-combo {
+    margin-top: 5px;
+    padding: 0.12em 0.55em 0.2em;
+    font-size: 0.68rem;
+    gap: 0.3em;
+  }
+
+  /* status line hidden; the taunt hangs below the strip as a speech bubble */
+  .mode-boss .boss-foe-say {
+    display: block;
+    min-height: 0;
+    margin: 0;
+  }
+
+  .mode-boss .boss-foe-status {
+    display: none;
+  }
+
+  .mode-boss .boss-taunt {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 4px;
+    z-index: 7;
+    width: max-content;
+    max-width: min(300px, calc(100vw - 40px));
+    margin: 0;
+    font-size: 0.85rem;
+    pointer-events: none;
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22), 0 8px 18px rgba(0, 0, 0, 0.3);
+  }
+
+  .mode-boss .boss-taunt::before {
+    top: -8px;
+    left: 18px;
+    border: 8px solid transparent;
+    border-top: 0;
+    border-bottom-color: #fff;
+    transform: none;
+  }
+
+  .mode-boss .boss-taunt[data-kind="rage"]::before {
+    border-right-color: transparent;
+    border-bottom-color: #ffe1e5;
+  }
+
+  .mode-boss .boss-float {
+    font-size: 1.35rem;
+    top: 8%;
+  }
+
+  /* the boss sprite hugs the left edge: grow damage numbers to the right */
+  .mode-boss .boss-foe .boss-float {
+    left: 10px;
+    align-items: flex-start;
+    --fx-shift: 0%;
+  }
+
+  .mode-boss .boss-float-crit {
+    font-size: 1.7rem;
+  }
+
+  .mode-boss .boss-float-boom {
+    top: 50%;
+    font-size: 2.6rem;
+  }
+
+  .mode-boss .boss-shot {
+    font-size: 1.4rem;
+  }
+
+  .mode-boss .boss-banner {
+    font-size: 1.7rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .mode-boss .boss-arena {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .mode-boss .boss-card {
+    padding: 6px 7px 10px;
+  }
+
+  .mode-boss .boss-foe {
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .mode-boss .boss-foe-sprite {
+    width: 38px;
+  }
+
+  .mode-boss .boss-foe-emoji {
+    font-size: 31px;
+  }
+
+  .mode-boss .boss-hero .blook {
+    --blook-size: 32px !important;
+  }
+}
+
+/* Short landscape screens: don't pin the battle, give the question the room. */
+@media (max-height: 520px) {
+  .mode-boss .boss-dock {
+    position: relative;
+    top: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* keep damage numbers readable instead of fading them out instantly */
+  .mode-boss .boss-float {
+    animation: none !important;
+    transform: translate(calc(var(--fx-shift, -50%) + var(--dx, 0px)), -10px);
+  }
+
+  .mode-boss .boss-float-boom {
+    transform: translate(-50%, -50%);
+  }
+}

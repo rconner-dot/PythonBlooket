@@ -1,0 +1,943 @@
+/* ==========================================================================
+   Survival mode (id "survival") — every rule is scoped under .mode-survival
+   and every class is prefixed "survival-". Reuses the :root tokens from
+   style.css (--c-*, --radius*, --shadow*, --font-*).
+   ========================================================================== */
+
+.mode-survival {
+  --sv-heart: #ff3b5c;
+  --sv-heart-d: #b8123a;
+  --sv-heart-empty: #ece6fa;
+  --sv-heart-empty-d: #d2c6f0;
+  --sv-tile-edge: #ddd3f5;
+  --sv-tier: var(--c-green-bright);
+}
+
+.mode-survival .survival-stage {
+  position: relative;
+  gap: 14px;
+}
+
+.mode-survival .survival-stage[data-tier="2"] { --sv-tier: var(--c-orange); }
+.mode-survival .survival-stage[data-tier="3"] { --sv-tier: #ff3b8d; }
+
+/* ------------------------------------------------------------------ HUD -- */
+
+.mode-survival .survival-hud {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.15fr) minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 0.8fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.mode-survival .survival-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 10px 14px;
+  background: var(--c-card);
+  color: var(--c-text);
+  border-radius: var(--radius);
+  box-shadow: inset 0 -5px 0 var(--sv-tile-edge), 0 5px 0 rgba(20, 8, 60, 0.22);
+  animation: survival-tile-in 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+/* the tier tile carries a thin stripe in the current tier colour */
+.mode-survival .survival-tile-tier::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 0;
+  height: 4px;
+  border-radius: 0 0 6px 6px;
+  background: var(--sv-tier);
+  transition: background 0.3s ease;
+}
+
+.mode-survival .survival-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.mode-survival .survival-pop-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
+/* ---- hearts ---- */
+
+.mode-survival .survival-hearts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.mode-survival .survival-heart {
+  --size: 30px;
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+}
+
+.mode-survival .survival-heart-half {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-origin: 50% 60%;
+}
+
+.mode-survival .survival-heart-half svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* whole heart = left copy unclipped; the right copy only shows while breaking */
+.mode-survival .survival-heart-r {
+  visibility: hidden;
+}
+
+.mode-survival .survival-heart-shape {
+  fill: var(--sv-heart);
+  stroke: var(--sv-heart-d);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+.mode-survival .survival-heart-shine {
+  fill: rgba(255, 255, 255, 0.6);
+}
+
+.mode-survival .survival-heart.is-full {
+  filter: drop-shadow(0 2px 0 rgba(120, 10, 40, 0.25));
+}
+
+.mode-survival .survival-heart.is-empty {
+  animation: survival-fade-in 0.25s ease both;
+}
+
+.mode-survival .survival-heart.is-empty .survival-heart-shape {
+  fill: var(--sv-heart-empty);
+  stroke: var(--sv-heart-empty-d);
+  stroke-dasharray: 2.2 1.6;
+}
+
+.mode-survival .survival-heart.is-empty .survival-heart-shine {
+  display: none;
+}
+
+.mode-survival .survival-heart-intro.is-full {
+  animation: survival-heart-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.5) both;
+  animation-delay: calc(200ms + var(--i, 0) * 110ms);
+}
+
+.mode-survival .survival-heart.is-gaining {
+  animation: survival-heart-gain 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+.mode-survival .survival-heart.is-breaking .survival-heart-l {
+  clip-path: polygon(0 0, 53% 0, 44% 30%, 58% 52%, 45% 74%, 51% 100%, 0 100%);
+  animation: survival-break-l 0.72s cubic-bezier(0.35, 0.05, 0.6, 1) forwards;
+}
+
+.mode-survival .survival-heart.is-breaking .survival-heart-r {
+  visibility: visible;
+  clip-path: polygon(53% 0, 100% 0, 100% 100%, 51% 100%, 45% 74%, 58% 52%, 44% 30%);
+  animation: survival-break-r 0.72s cubic-bezier(0.35, 0.05, 0.6, 1) forwards;
+}
+
+/* one life left: the last heart beats and the screen edges glow red */
+.mode-survival .survival-danger .survival-heart.is-full {
+  animation: survival-heartbeat 0.95s ease-in-out infinite;
+}
+
+.mode-survival .survival-danger .survival-tile-lives {
+  box-shadow: inset 0 -5px 0 #ffc2cd, 0 5px 0 rgba(20, 8, 60, 0.22), 0 0 0 3px rgba(255, 59, 92, 0.55);
+}
+
+/* ---- bonus-life progress ---- */
+
+.mode-survival .survival-bonus {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  max-width: 180px;
+}
+
+.mode-survival .survival-bonus-track {
+  flex: 1;
+  height: 7px;
+  border-radius: 99px;
+  background: #eee8fb;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(42, 27, 79, 0.12);
+}
+
+.mode-survival .survival-bonus-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff8fb4, var(--sv-heart));
+  transition: width 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.mode-survival .survival-bonus-text {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: var(--c-muted);
+  white-space: nowrap;
+}
+
+/* ---- tier ---- */
+
+.mode-survival .survival-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
+  max-width: 100%;
+  padding: 0.3em 0.85em 0.4em;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  line-height: 1.1;
+  white-space: nowrap;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.mode-survival .survival-tier-stars {
+  letter-spacing: 1px;
+}
+
+.mode-survival .survival-pips {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.mode-survival .survival-pips i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e7e0f8;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.mode-survival .survival-pips i.is-on {
+  background: var(--sv-tier);
+  transform: scale(1.15);
+}
+
+.mode-survival .survival-pips.is-close i.is-on {
+  animation: survival-pip-glow 0.8s ease-in-out infinite alternate;
+}
+
+.mode-survival .survival-pips.is-max i {
+  background: linear-gradient(135deg, var(--c-red), #8b2cf5);
+}
+
+/* ---- multiplier ---- */
+
+.mode-survival .survival-mult-badge {
+  display: inline-block;
+  min-width: 2.6em;
+  padding: 0.1em 0.45em 0.2em;
+  border-radius: 14px;
+  background: #efe8ff;
+  color: #4a2597;
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  line-height: 1.05;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.12);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.mode-survival .survival-mult-badge[data-level="1"] {
+  background: var(--c-blue);
+  color: #fff;
+}
+
+.mode-survival .survival-mult-badge[data-level="2"] {
+  background: var(--c-orange);
+  color: #2b1600;
+}
+
+.mode-survival .survival-mult-badge[data-level="3"] {
+  background: linear-gradient(135deg, #ff5cb8, var(--c-red) 70%);
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  animation: survival-fire 0.9s ease-in-out infinite alternate;
+}
+
+.mode-survival .survival-streak-count {
+  color: #c2410c;
+}
+
+/* ---- score / survived ---- */
+
+.mode-survival .survival-score-value,
+.mode-survival .survival-survived-value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+
+.mode-survival .survival-shield {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.mode-survival .survival-survived-mini {
+  display: none;
+}
+
+.mode-survival .survival-survived-mini {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- one-shot HUD animations ---- */
+
+.mode-survival .survival-bump { animation: survival-bump 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.5); }
+.mode-survival .survival-tier-up { animation: survival-tier-up 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+.mode-survival .survival-tier-down { animation: survival-tier-down 0.6s ease; }
+.mode-survival .survival-mult-up { animation: survival-mult-up 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.5); }
+.mode-survival .survival-mult-lost { animation: survival-mult-lost 0.5s ease; }
+
+/* ------------------------------------------------------- floating text -- */
+
+.mode-survival .survival-float {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  padding: 0.12em 0.6em 0.2em;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: #fff;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2), 0 4px 10px rgba(20, 8, 60, 0.3);
+  transform: translate(-50%, -50%);
+  animation: survival-float 1.15s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.mode-survival .survival-float-good { background: var(--c-green); }
+.mode-survival .survival-float-bad { background: var(--c-red); }
+.mode-survival .survival-float-life { background: linear-gradient(135deg, #ff8fb4, var(--sv-heart)); }
+.mode-survival .survival-float-mult { background: linear-gradient(135deg, var(--c-orange), #ff5cb8); font-size: 1.35rem; }
+
+/* --------------------------------------------------- damage vignettes -- */
+
+.mode-survival .survival-vignette {
+  position: fixed;
+  top: var(--topbar-h);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.mode-survival .survival-vignette-hurt {
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 30, 70, 0.5) 100%);
+}
+
+.mode-survival .survival-hurt .survival-vignette-hurt {
+  animation: survival-hurt 0.75s ease-out;
+}
+
+.mode-survival .survival-vignette-danger {
+  background: radial-gradient(ellipse at center, transparent 68%, rgba(255, 30, 70, 0.3) 100%);
+  transition: opacity 0.4s ease;
+}
+
+.mode-survival .survival-danger .survival-vignette-danger {
+  opacity: 0.85;
+  animation: survival-danger 1.9s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------- question area -- */
+
+.mode-survival .survival-qarea {
+  position: relative;
+  z-index: 1;
+  min-height: 280px;
+}
+
+/* extra line added to the engine's feedback banner */
+.mode-survival .survival-note {
+  flex: 1 1 100%;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+
+.mode-survival .survival-note-bad { color: var(--c-red-d); }
+.mode-survival .survival-note-good { color: var(--c-green-d); }
+
+/* ------------------------------------------------------ level-up splash -- */
+
+.mode-survival .survival-splash {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  padding: 30px 18px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(160deg, #ffb13d, #ff7a1f 55%, #e2551a);
+  box-shadow: inset 0 -7px 0 rgba(0, 0, 0, 0.2), var(--shadow);
+  cursor: pointer;
+  outline: none;
+  animation: survival-splash-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+
+.mode-survival .survival-splash-3 {
+  background: linear-gradient(160deg, #ff4d6d, #d0257a 50%, #7c2ae8);
+}
+
+.mode-survival .survival-splash-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1400px;
+  height: 1400px;
+  margin: -700px 0 0 -700px;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.15) 0deg 9deg, transparent 9deg 18deg);
+  animation: survival-spin 14s linear infinite;
+}
+
+.mode-survival .survival-splash-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.mode-survival .survival-splash-kicker {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 10vw, 4.4rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.25), 0 10px 24px rgba(0, 0, 0, 0.25);
+  animation: survival-kicker 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.6) both;
+}
+
+.mode-survival .survival-splash-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0.3em 1.1em 0.42em;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 4.5vw, 1.8rem);
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.2), 0 0 0 4px #fff, 0 8px 18px rgba(0, 0, 0, 0.25);
+  animation: survival-tile-in 0.5s 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+.mode-survival .survival-splash-sub {
+  max-width: 30ch;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-wrap: balance;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.mode-survival .survival-splash-mult {
+  padding: 0.25em 0.9em 0.32em;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  font-weight: 900;
+}
+
+.mode-survival .survival-splash-hint {
+  font-size: 0.85rem;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+/* ------------------------------------------------------------ game over -- */
+
+.mode-survival .survival-is-over .survival-hud {
+  filter: grayscale(0.55);
+  opacity: 0.85;
+  transition: filter 0.6s ease, opacity 0.6s ease;
+}
+
+.mode-survival .survival-gameover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 26px 18px 26px;
+  border-radius: var(--radius-lg);
+  background: var(--c-card);
+  color: var(--c-text);
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: survival-splash-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+
+.mode-survival .survival-bigheart-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 150px;
+  height: 140px;
+}
+
+.mode-survival .survival-bigheart-glow {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 59, 92, 0.35), transparent 70%);
+  animation: survival-glow-out 1.6s 0.7s ease forwards;
+}
+
+.mode-survival .survival-heart.survival-bigheart {
+  --size: 124px;
+}
+
+.mode-survival .survival-bigheart.is-full {
+  animation: survival-heartbeat 0.6s ease-in-out 2;
+}
+
+.mode-survival .survival-bigheart .survival-heart-shape {
+  stroke-width: 0.9;
+}
+
+.mode-survival .survival-bigheart.is-breaking .survival-heart-l {
+  animation: survival-bigbreak-l 1.1s cubic-bezier(0.3, 0, 0.5, 1) forwards;
+}
+
+.mode-survival .survival-bigheart.is-breaking .survival-heart-r {
+  animation: survival-bigbreak-r 1.1s cubic-bezier(0.3, 0, 0.5, 1) forwards;
+}
+
+.mode-survival .survival-gameover-title {
+  font-size: clamp(2.2rem, 8vw, 3.2rem);
+  color: var(--c-red);
+  text-shadow: 0 4px 0 rgba(165, 26, 44, 0.18);
+}
+
+.mode-survival .survival-gameover-sub {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--c-muted);
+}
+
+.mode-survival .survival-gameover-sub b {
+  color: var(--c-text);
+}
+
+.mode-survival .survival-go-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 6px 0 8px;
+}
+
+.mode-survival .survival-go-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 104px;
+  padding: 8px 14px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--c-card-2);
+  box-shadow: inset 0 -4px 0 var(--sv-tile-edge);
+}
+
+.mode-survival .survival-go-stat b {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.35rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.mode-survival .survival-go-stat span {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+
+.mode-survival .survival-go-stat.is-score b {
+  color: var(--c-purple);
+}
+
+/* ----------------------------------------------------------- keyframes -- */
+
+@keyframes survival-tile-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes survival-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes survival-heart-in {
+  0% { opacity: 0; transform: scale(0.2) rotate(-20deg); }
+  70% { opacity: 1; transform: scale(1.25) rotate(6deg); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes survival-heart-gain {
+  0% { transform: scale(0.2); filter: drop-shadow(0 0 0 rgba(255, 92, 140, 0)); }
+  45% { transform: scale(1.5); filter: drop-shadow(0 0 10px rgba(255, 92, 140, 0.95)); }
+  100% { transform: none; filter: drop-shadow(0 2px 0 rgba(120, 10, 40, 0.25)); }
+}
+
+@keyframes survival-break-l {
+  0% { transform: none; opacity: 1; }
+  18% { transform: translate(-1px, -2px) rotate(-6deg) scale(1.12); opacity: 1; }
+  100% { transform: translate(-10px, 22px) rotate(-42deg) scale(0.85); opacity: 0; }
+}
+
+@keyframes survival-break-r {
+  0% { transform: none; opacity: 1; }
+  18% { transform: translate(1px, -2px) rotate(6deg) scale(1.12); opacity: 1; }
+  100% { transform: translate(10px, 22px) rotate(42deg) scale(0.85); opacity: 0; }
+}
+
+@keyframes survival-bigbreak-l {
+  0% { transform: none; }
+  12% { transform: translateX(-3px) rotate(-3deg); }
+  24% { transform: translateX(2px); }
+  40% { transform: translate(-10px, 2px) rotate(-14deg); }
+  100% { transform: translate(-24px, 18px) rotate(-26deg); filter: saturate(0.8); }
+}
+
+@keyframes survival-bigbreak-r {
+  0% { transform: none; }
+  12% { transform: translateX(3px) rotate(3deg); }
+  24% { transform: translateX(-2px); }
+  40% { transform: translate(10px, 2px) rotate(14deg); }
+  100% { transform: translate(24px, 22px) rotate(30deg); filter: saturate(0.8); }
+}
+
+@keyframes survival-glow-out {
+  to { opacity: 0; transform: scale(1.4); }
+}
+
+@keyframes survival-heartbeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.2); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.12); }
+}
+
+@keyframes survival-pip-glow {
+  from { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  to { box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.55); }
+}
+
+@keyframes survival-fire {
+  from { box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18), 0 0 0 0 rgba(255, 92, 184, 0); }
+  to { box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18), 0 0 14px 3px rgba(255, 92, 184, 0.75); }
+}
+
+@keyframes survival-bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+@keyframes survival-tier-up {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.35) rotate(-4deg); }
+  60% { transform: scale(0.95) rotate(2deg); }
+  100% { transform: none; }
+}
+
+@keyframes survival-tier-down {
+  0% { transform: none; }
+  30% { transform: translateY(6px) scale(0.88); }
+  55% { transform: translateY(-2px); }
+  100% { transform: none; }
+}
+
+@keyframes survival-mult-up {
+  0% { transform: scale(1); filter: brightness(1); }
+  35% { transform: scale(1.45) rotate(-5deg); filter: brightness(1.25); }
+  65% { transform: scale(0.94) rotate(3deg); }
+  100% { transform: none; filter: brightness(1); }
+}
+
+@keyframes survival-mult-lost {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-6px) rotate(-4deg); }
+  40% { transform: translateX(5px) rotate(3deg); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes survival-float {
+  0% { opacity: 0; transform: translate(-50%, -20%) scale(0.5); }
+  18% { opacity: 1; transform: translate(-50%, -75%) scale(1.15); }
+  72% { opacity: 1; transform: translate(-50%, -125%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -165%) scale(0.95); }
+}
+
+@keyframes survival-hurt {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes survival-danger {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@keyframes survival-splash-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes survival-kicker {
+  0% { opacity: 0; transform: scale(0.3) rotate(-10deg); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes survival-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------------------------------------------------------- responsive -- */
+
+@media (max-width: 900px) {
+  .mode-survival .survival-hud {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.3fr) minmax(0, 1.05fr) minmax(0, 1.05fr) minmax(0, 0.7fr);
+    gap: 8px;
+  }
+
+  .mode-survival .survival-tile {
+    padding: 9px 6px 13px;
+  }
+
+  .mode-survival .survival-heart {
+    --size: 25px;
+  }
+
+  .mode-survival .survival-tier-badge {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .mode-survival .survival-hud {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 0.9fr);
+  }
+
+  .mode-survival .survival-heart {
+    --size: 21px;
+  }
+
+  .mode-survival .survival-tier-name,
+  .mode-survival .survival-tier-left,
+  .mode-survival .survival-streak-next {
+    display: none;
+  }
+
+  .mode-survival .survival-mult-badge {
+    font-size: 1.55rem;
+  }
+
+  .mode-survival .survival-score-value,
+  .mode-survival .survival-survived-value {
+    font-size: 1.45rem;
+  }
+}
+
+/* phones: the HUD becomes one compact white strip so the question gets the space */
+@media (max-width: 560px) {
+  .mode-survival .survival-stage {
+    gap: 10px;
+    padding-top: 10px;
+  }
+
+  .mode-survival .survival-hud {
+    grid-template-columns: auto auto auto minmax(0, 1fr);
+    gap: 0;
+    padding: 6px 2px 9px;
+    background: var(--c-card);
+    border-radius: 16px;
+    box-shadow: inset 0 -4px 0 var(--sv-tile-edge), 0 4px 0 rgba(20, 8, 60, 0.22);
+    animation: survival-tile-in 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  }
+
+  .mode-survival .survival-tile {
+    gap: 3px;
+    padding: 0 7px;
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .mode-survival .survival-tile + .survival-tile {
+    border-left: 2px solid #eee8fb;
+  }
+
+  .mode-survival .survival-tile-tier::after {
+    display: none;
+  }
+
+  .mode-survival .survival-danger .survival-tile-lives {
+    box-shadow: none;
+  }
+
+  .mode-survival .survival-danger .survival-hud {
+    box-shadow: inset 0 -4px 0 #ffc2cd, 0 4px 0 rgba(20, 8, 60, 0.22), 0 0 0 3px rgba(255, 59, 92, 0.55);
+  }
+
+  .mode-survival .survival-hearts {
+    gap: 1px;
+  }
+
+  .mode-survival .survival-heart {
+    --size: 17px;
+  }
+
+  .mode-survival .survival-bonus {
+    max-width: none;
+  }
+
+  .mode-survival .survival-bonus-track {
+    height: 5px;
+  }
+
+  .mode-survival .survival-bonus-text,
+  .mode-survival .survival-tier-left,
+  .mode-survival .survival-tile-survived,
+  .mode-survival .survival-score-label {
+    display: none;
+  }
+
+  .mode-survival .survival-survived-mini {
+    display: inline-block;
+  }
+
+  .mode-survival .survival-tier-badge {
+    padding: 0.22em 0.5em 0.3em;
+    font-size: 0.78rem;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  .mode-survival .survival-pips {
+    gap: 3px;
+  }
+
+  .mode-survival .survival-pips i {
+    width: 7px;
+    height: 7px;
+  }
+
+  .mode-survival .survival-mult-badge {
+    min-width: 2.4em;
+    padding: 0.08em 0.35em 0.16em;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+  }
+
+  .mode-survival .survival-sub {
+    font-size: 0.62rem;
+    letter-spacing: 0.03em;
+  }
+
+  .mode-survival .survival-score-value,
+  .mode-survival .survival-survived-value {
+    font-size: 1.15rem;
+  }
+
+  .mode-survival .survival-float {
+    font-size: 0.95rem;
+  }
+
+  .mode-survival .survival-vignette-hurt {
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(255, 30, 70, 0.5) 100%);
+  }
+
+  .mode-survival .survival-qarea {
+    min-height: 240px;
+  }
+
+  .mode-survival .survival-splash {
+    min-height: 260px;
+  }
+
+  .mode-survival .survival-go-stat {
+    min-width: 88px;
+    padding: 7px 10px 10px;
+  }
+
+  .mode-survival .survival-go-stat b {
+    font-size: 1.15rem;
+  }
+}
+
+@media (max-width: 370px) {
+  .mode-survival .survival-tile {
+    padding: 0 5px;
+  }
+
+  .mode-survival .survival-heart {
+    --size: 15px;
+  }
+
+  .mode-survival .survival-mult-badge {
+    font-size: 1.08rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mode-survival .survival-splash-rays {
+    animation: none;
+  }
+}
