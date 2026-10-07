@@ -1894,7 +1894,8 @@ def gen_dunder_semantics(rng: random.Random) -> Question:
         if rng.random() < 0.6:
             main = f"team = [{team}]\nprint([p.name for p in sorted(team)])"
             expect = repr(by_score)
-            distractors = [repr(sorted(names)), repr(names), repr(by_score[::-1]), TYPE_ERR, repr(sorted(names)[::-1])]
+            distractors = [repr(sorted(names)), repr(names), repr(by_score[::-1]), TYPE_ERR, repr(sorted(names)[::-1]),
+                           repr(by_score[1:] + by_score[:1]), repr(by_score[-1:] + by_score[:-1])]
             why = (
                 f"`sorted` orders items using `<`, which calls `__lt__`, and this `__lt__` compares "
                 f"`score`. So the players come out from lowest to highest score: {by_score}."
